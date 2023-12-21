@@ -5,8 +5,11 @@
 
 #include "hash_table.h"
 
-#define HT_PRIME_1 151
-#define HT_PRIME_2 163
+static const int HT_PRIME_1 = 151;
+static const int HT_PRIME_2 = 163;
+
+
+static ht_item HT_DELETED_ITEM = {NULL, NULL};
 
 static ht_item* ht_new_item(const char* k, const char* v) {
     ht_item* i = malloc(sizeof(ht_item));
@@ -65,12 +68,21 @@ void ht_insert(ht_hash_table *ht, const char *key, const char *value){
   int index = ht_get_hash(item->key, ht->size, 0) ;
   ht_item* cur_item = ht->items[index];
   int i = 1;
-  while (cur_item != NULL){
+
+  // while current item is not an empty fillable spot
+  while (cur_item != NULL && cur_item != &HT_DELETED_ITEM){
+    // update the spot if the key matches and return
+    if (strcmp(cur_item->key, key) == 0){
+      ht_del_item(cur_item);
+      ht->items[index] = item;
+      return;
+    }
+    // other wise probe the next available spot
     index = ht_get_hash(item->key, ht->size, i);
     cur_item = ht->items[index];
     i++;
   }
-
+  // once current item is an empty fillable spot, insert
   ht->items[index] = item;
   ht->count++;
 
@@ -80,7 +92,7 @@ char* ht_search(ht_hash_table *ht, const char *key){
   int index = ht_get_hash(key, ht->size, 0);
   ht_item* item = ht->items[index];
   int i = 1;
-  while (item != NULL) {
+  while (item != NULL && item != &HT_DELETED_ITEM) {
     if (strcmp(item->key, key) == 0) {
       return item->value;
     }
@@ -91,7 +103,7 @@ char* ht_search(ht_hash_table *ht, const char *key){
   return NULL;
 }
 
-static ht_item HT_DELETED_ITEM = {NULL, NULL};
+
 void ht_delete(ht_hash_table* ht, const char* key) {
   int index = ht_get_hash(key, ht->size, 0);
   ht_item* item = ht->items[index];
@@ -110,3 +122,8 @@ void ht_delete(ht_hash_table* ht, const char* key) {
     i++;
   }
 }
+
+
+
+
+
